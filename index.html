@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="RelayLink moves whole projects between Adobe InDesign and Illustrator, both ways: pages, layers, text, colours and linked images.">
+<meta property="og:title" content="RelayLink">
+<meta property="og:description" content="RelayLink moves whole projects between Adobe InDesign and Illustrator, both ways: pages, layers, text, colours and linked images.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://bigmisha87.github.io/indesign-illustrator---Relay-Link/">
+<meta property="og:image" content="https://bigmisha87.github.io/indesign-illustrator---Relay-Link/media/demo-poster.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<title>RelayLink</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the page is a pasteboard; every section is a sheet laid on it, with crop marks at its corners. */
+:root {
+  --board: #e3e5ea;        /* pasteboard */
+  --sheet: #ffffff;        /* paper */
+  --sheet-2: #f3f4f7;
+  --ink: #14161b;
+  --muted: #5a616e;
+  --rule: #cfd3da;
+  --id: #d42a63;           /* InDesign pink: the Send colour inside Illustrator */
+  --ai: #f59100;           /* Illustrator orange: the Send colour inside InDesign */
+  --ai-ink: #a85f00;
+  --go: #1f8a68;           /* receive / ready */
+  --shadow: 0 1px 2px rgba(20,22,27,.06), 0 12px 32px -12px rgba(20,22,27,.18);
+  --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Instrument Sans", -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --board: #17191e; --sheet: #22252c; --sheet-2: #1c1f25; --ink: #eef0f4; --muted: #9ba3b1; --rule: #353a44;
+  --id: #ff4f8b; --ai: #ffa31a; --ai-ink: #ffb84d; --go: #3cc596;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 18px 40px -16px rgba(0,0,0,.6); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --board: #17191e; --sheet: #22252c; --sheet-2: #1c1f25; --ink: #eef0f4; --muted: #9ba3b1; --rule: #353a44;
+  --id: #ff4f8b; --ai: #ffa31a; --ai-ink: #ffb84d; --go: #3cc596;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 18px 40px -16px rgba(0,0,0,.6); color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { background: var(--board); color: var(--ink); font: 400 17px/1.6 var(--f-body); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+a { color: inherit; }
+h1, h2, h3 { font-family: var(--f-display); font-stretch: 112%; line-height: 1.04; margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+h1 { font-size: clamp(2.6rem, 6.2vw, 5rem); font-weight: 850; }
+h2 { font-size: clamp(1.9rem, 3.6vw, 2.9rem); font-weight: 800; }
+h3 { font-size: 1.3rem; font-weight: 750; font-stretch: 105%; }
+p { margin: 0; }
+.mono { font-family: var(--f-mono); font-size: .8rem; letter-spacing: .02em; }
+.eyebrow { font-family: var(--f-mono); font-size: .78rem; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); }
+.lead { font-size: 1.2rem; color: var(--muted); max-width: 34em; }
+:focus-visible { outline: 2px solid var(--id); outline-offset: 3px; border-radius: 4px; }
+
+/* app chips */
+.chip { display: inline-grid; place-items: center; width: 1.9em; height: 1.9em; border-radius: .42em; font: 800 .95em/1 var(--f-display); font-stretch: 100%; }
+.chip.id { background: var(--id); color: #fff; }
+.chip.ai { background: var(--ai); color: #2b1700; }
+
+/* top bar */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 22px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; font: 800 1.25rem/1 var(--f-display); font-stretch: 115%; text-decoration: none; }
+.brand .swap { color: var(--muted); font-size: .9rem; }
+.nav { display: flex; gap: 22px; flex-wrap: wrap; }
+.nav a { text-decoration: none; color: var(--muted); font-size: .95rem; }
+.nav a:hover { color: var(--ink); }
+
+/* sheets with crop marks */
+.sheet { position: relative; background: var(--sheet); box-shadow: var(--shadow); padding-block: clamp(36px, 6vw, 72px); }
+.sheet > .inner { padding-left: clamp(20px, 5vw, 64px); padding-right: clamp(20px, 5vw, 64px); }
+.sheet::before, .sheet::after { content: ""; position: absolute; width: 22px; height: 22px; pointer-events: none; }
+.sheet::before { top: -14px; left: -14px; border-left: 1px solid var(--muted); border-top: 1px solid var(--muted); clip-path: polygon(0 0, 100% 0, 100% 1px, 1px 1px, 1px 100%, 0 100%); opacity: .55; }
+.sheet::after { bottom: -14px; right: -14px; border-right: 1px solid var(--muted); border-bottom: 1px solid var(--muted); opacity: .55; }
+section { margin-block: clamp(28px, 5vw, 56px); }
+.slug { display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; color: var(--muted); }
+
+/* hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); gap: clamp(28px, 5vw, 64px); align-items: center; }
+.hero-copy { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.hero h1 .both { color: var(--id); }
+.ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 9px; padding: 13px 22px; border-radius: 999px; font: 600 1rem/1 var(--f-body); text-decoration: none; border: 1px solid transparent; cursor: pointer; }
+.btn.send { background: var(--ai); color: #2b1700; }
+.btn.ghost { border-color: var(--rule); color: var(--ink); background: transparent; }
+.btn:hover { filter: brightness(1.05); }
+.btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* the relay stage */
+.stage { position: relative; aspect-ratio: 16 / 11; max-width: 100%; }
+.win { position: absolute; top: 6%; width: 44%; height: 88%; background: var(--sheet-2); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+.win.l { left: 0; } .win.r { right: 0; }
+.bar { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--rule); font-size: .72rem; color: var(--muted); min-width: 0; }
+.bar .chip { font-size: .66rem; }
+.bar span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.board { position: relative; flex: 1; background: repeating-linear-gradient(45deg, transparent 0 9px, color-mix(in srgb, var(--rule) 35%, transparent) 9px 10px); }
+.page { position: absolute; left: 14%; top: 9%; width: 72%; height: 82%; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.18); }
+.obj { position: absolute; border-radius: 2px; }
+.o1 { left: 9%; top: 7%; width: 82%; height: 10%; background: #2c3f86; }
+.o2 { left: 9%; top: 21%; width: 82%; height: 38%; background: linear-gradient(135deg, #e9707f, #f5b25b); }
+.o3 { left: 9%; top: 64%; width: 60%; height: 4%; background: #2a2d34; }
+.o4 { left: 9%; top: 71%; width: 74%; height: 3%; background: #8a909c; }
+.o5 { left: 9%; top: 77%; width: 52%; height: 3%; background: #8a909c; }
+.o6 { right: 9%; bottom: 7%; width: 22%; aspect-ratio: 1; border-radius: 50%; background: #1f8a68; }
+.artboard-label { position: absolute; left: 14%; top: 3%; font: 500 .6rem/1 var(--f-mono); color: var(--muted); }
+.flyer { position: absolute; border-radius: 2px; opacity: 0; pointer-events: none; }
+.link { position: absolute; left: 44%; right: 44%; top: 50%; height: 2px; transform: translateY(-50%);
+  background: repeating-linear-gradient(90deg, var(--ai) 0 8px, transparent 8px 14px); }
+.link.back { top: 56%; background: repeating-linear-gradient(90deg, var(--id) 0 8px, transparent 8px 14px); }
+.pill { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -165%); background: var(--sheet); border: 1px solid var(--rule); border-radius: 999px; padding: 4px 10px; font: 500 .66rem/1.2 var(--f-mono); white-space: nowrap; box-shadow: var(--shadow); }
+.pill b { color: var(--go); font-weight: 600; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .link { animation: march 1.1s linear infinite; }
+  .link.back { animation-direction: reverse; }
+  @keyframes march { to { background-position: 28px 0; } }
+  .win.r .page .obj { animation: land 7s ease-in-out infinite; }
+  .win.r .o1 { animation-delay: 0s; } .win.r .o2 { animation-delay: .25s; } .win.r .o3 { animation-delay: .5s; }
+  .win.r .o4 { animation-delay: .6s; } .win.r .o5 { animation-delay: .7s; } .win.r .o6 { animation-delay: .9s; }
+  @keyframes land { 0%, 8% { opacity: 1; transform: none; } 14% { opacity: .12; transform: translateX(-6px); } 36% { opacity: .12; transform: translateX(-6px); }
+                    46%, 100% { opacity: 1; transform: none; } }
+  .flyer { animation: fly 7s cubic-bezier(.55,.05,.35,1) infinite; }
+  @keyframes fly { 0%, 16% { opacity: 0; transform: translate(0, 0) scale(.9); } 20% { opacity: 1; }
+                   34% { opacity: 1; transform: translate(var(--dx), var(--dy)) scale(1); } 40%, 100% { opacity: 0; transform: translate(var(--dx), var(--dy)); } }
+  .pill b { animation: blink 7s steps(1) infinite; }
+  @keyframes blink { 0%, 14% { opacity: 1; } 15%, 44% { opacity: .35; } 45% { opacity: 1; } }
+}
+
+/* demo video */
+.video { display: grid; gap: 18px; }
+.video video { width: 100%; max-width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; background: #0e1117; display: block; }
+.video-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; }
+
+/* steps */
+.steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(20px, 4vw, 48px); margin-top: 36px; }
+.step { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.step .n { font: 800 3.2rem/1 var(--f-display); font-stretch: 125%; }
+.step:nth-child(1) .n { color: var(--ai); } .step:nth-child(2) .n { color: var(--go); }
+.step figure { margin: 0; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--sheet-2); }
+.step img { display: block; width: 100%; height: auto; }
+.step p { color: var(--muted); max-width: 32em; }
+.note { margin-top: 26px; color: var(--muted); font-size: .95rem; }
+
+/* what's new */
+.new-head { display: grid; gap: 14px; max-width: 46em; }
+.features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 36px; }
+.feat { border: 1px solid var(--rule); border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 14px; background: var(--sheet); min-width: 0; }
+.feat p { color: var(--muted); font-size: .95rem; }
+.tag { align-self: flex-start; font: 600 .7rem/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; padding: 6px 9px; border-radius: 999px; background: var(--ai); color: #2b1700; }
+.demo { margin-top: auto; background: var(--sheet-2); border: 1px solid var(--rule); border-radius: 10px; padding: 16px; display: grid; gap: 12px; }
+.field { display: flex; align-items: center; gap: 10px; }
+.field label { font: 500 .78rem/1 var(--f-mono); color: var(--muted); }
+.field input { flex: 1; min-width: 0; font: 500 .95rem/1 var(--f-mono); color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; }
+.field input:focus { outline: none; border-color: var(--ai); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ai) 25%, transparent); }
+.field input.bad { border-color: var(--id); }
+.grid12 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 7px; }
+.pg { aspect-ratio: 3 / 4; border-radius: 3px; background: var(--sheet); border: 1px solid var(--rule); position: relative; transition: background .25s, border-color .25s, transform .25s; }
+.pg::after { content: attr(data-n); position: absolute; inset: auto 0 3px; text-align: center; font: 500 .62rem/1 var(--f-mono); color: var(--muted); }
+.pg.on { background: color-mix(in srgb, var(--ai) 22%, var(--sheet)); border-color: var(--ai); transform: translateY(-2px); }
+.hint { font: 500 .78rem/1.3 var(--f-mono); color: var(--muted); min-height: 1.3em; }
+.hint.bad { color: var(--id); }
+.switch { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: .92rem; }
+.switch input { width: 18px; height: 18px; accent-color: var(--ai); }
+.pb { position: relative; aspect-ratio: 16 / 9; border-radius: 6px; background: repeating-linear-gradient(45deg, transparent 0 7px, color-mix(in srgb, var(--rule) 45%, transparent) 7px 8px); overflow: hidden; }
+.pb .pgx { position: absolute; left: 33%; top: 10%; width: 34%; height: 80%; background: #fff; box-shadow: 0 1px 6px rgba(0,0,0,.2); }
+.pb .s { position: absolute; border-radius: 3px; transition: opacity .45s, transform .45s; }
+.pb .s.scrap { opacity: .25; transform: translateY(-6px) scale(.92); }
+.pb.with .s.scrap { opacity: 1; transform: none; }
+.pb .keep { outline: 2px solid var(--go); outline-offset: 2px; }
+.pb-note { font: 500 .74rem/1.4 var(--f-mono); color: var(--muted); }
+.lay { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: start; }
+.lay ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.lay li { display: flex; align-items: center; gap: 8px; font-size: .85rem; padding: 6px 8px; border-radius: 6px; background: var(--sheet); border: 1px solid var(--rule); transition: opacity .35s, transform .35s, max-height .35s; overflow: hidden; max-height: 40px; white-space: nowrap; }
+.lay li i { width: 11px; height: 11px; border-radius: 2px; flex: none; }
+.lay li small { margin-left: auto; color: var(--muted); font: 500 .65rem/1 var(--f-mono); }
+.lay .arrow { align-self: center; color: var(--muted); font: 600 1.1rem/1 var(--f-mono); }
+.lay .to.merged li:not(:first-child) { opacity: 0; max-height: 0; padding-block: 0; border-width: 0; margin-top: -6px; }
+.lay-h { font: 600 .7rem/1 var(--f-mono); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; }
+.lay-h.ai { color: var(--ai-ink); } .lay-h.id { color: var(--id); }
+
+.fresh { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); align-items: center; margin-top: 44px; padding-top: 40px; border-top: 1px solid var(--rule); }
+.fresh .panels { display: flex; gap: 16px; justify-content: center; min-width: 0; }
+.fresh .panels figure { margin: 0; flex: 1; max-width: 240px; min-width: 0; text-align: center; }
+.fresh .panels img { width: 100%; height: auto; border-radius: 8px; box-shadow: var(--shadow); display: block; }
+.fresh figcaption { font: 500 .75rem/1.3 var(--f-mono); color: var(--muted); margin-top: 10px; }
+.fresh ul { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; color: var(--muted); }
+.fresh li { display: flex; gap: 10px; align-items: baseline; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; transform: translateY(1px); }
+
+/* what travels */
+.travels { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); margin-top: 32px; }
+.spec { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+.spec div { padding-block: 13px; border-top: 1px solid var(--rule); min-width: 0; }
+.spec dt { font-weight: 600; }
+.spec dd { margin: 3px 0 0; color: var(--muted); font-size: .92rem; }
+.stays { background: var(--sheet-2); border-radius: 10px; padding: 22px; align-self: start; border: 1px dashed var(--rule); }
+.stays h3 { font-size: 1.05rem; }
+.stays p { color: var(--muted); font-size: .92rem; margin-top: 8px; }
+.stays ul { margin: 12px 0 0; padding-left: 18px; color: var(--muted); font-size: .92rem; display: grid; gap: 4px; }
+
+/* install */
+.install { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 30px; counter-reset: s; }
+.install li { list-style: none; border-top: 3px solid var(--ink); padding-top: 14px; display: grid; gap: 8px; min-width: 0; }
+.install li::before { counter-increment: s; content: "Step " counter(s); font: 500 .74rem/1 var(--f-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+.install p { color: var(--muted); font-size: .95rem; }
+.install code { font-family: var(--f-mono); font-size: .85em; background: var(--sheet-2); border: 1px solid var(--rule); border-radius: 4px; padding: 1px 5px; overflow-wrap: anywhere; }
+.reqs { margin-top: 26px; display: flex; gap: 10px 26px; flex-wrap: wrap; color: var(--muted); font-size: .92rem; }
+
+.lang { font: 600 .9rem/1 var(--f-body); text-decoration: none; border: 1px solid var(--rule); border-radius: 999px; padding: 7px 12px; color: var(--ink); }
+footer { padding-block: 34px 48px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; color: var(--muted); font-size: .9rem; }
+footer a { text-decoration: none; border-bottom: 1px solid var(--rule); }
+footer a:hover { color: var(--ink); }
+
+@media (max-width: 900px) {
+  .hero, .travels, .fresh { grid-template-columns: minmax(0, 1fr); }
+  .features { grid-template-columns: minmax(0, 1fr); }
+  .install { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 620px) {
+  .steps, .spec { grid-template-columns: minmax(0, 1fr); }
+  .nav { display: none; }
+  body { font-size: 16px; }
+}
+
+html, body { margin: 0; }
+img, video { max-width: 100%; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#top" id="top"><span class="chip id">Id</span><span class="swap">⇄</span><span class="chip ai">Ai</span> RelayLink</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#how">How it works</a><a href="#new">What's new</a><a href="#travels">What travels</a><a href="#install">Install</a>
+    </nav>
+    <a class="lang" href="he.html" lang="he" dir="rtl">עברית</a>
+  </header>
+
+  <!-- HERO -->
+  <section class="sheet" aria-labelledby="h-hero">
+    <div class="inner hero">
+      <div class="hero-copy">
+        <span class="eyebrow">A panel for Adobe InDesign &amp; Illustrator</span>
+        <h1 id="h-hero">Move the whole project. <span class="both">Both ways.</span></h1>
+        <p class="lead">Press Send in one app and Receive in the other. Pages become artboards, layers stay layers, Hebrew stays right-to-left, and images stay linked to the very same files.</p>
+        <div class="ctas">
+          <a class="btn send" href="#demo"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>Watch the 55-second demo</a>
+          <a class="btn ghost" href="#how">How it works</a>
+        </div>
+      </div>
+      <div class="stage" aria-label="Animation: objects from an InDesign page arrive on an Illustrator artboard" role="img">
+        <div class="win l">
+          <div class="bar"><span class="chip id">Id</span><span>Catalog_2026.indd</span></div>
+          <div class="board">
+            <span class="artboard-label">Page 1</span>
+            <div class="page" id="srcPage">
+              <i class="obj o1"></i><i class="obj o2"></i><i class="obj o3"></i><i class="obj o4"></i><i class="obj o5"></i><i class="obj o6"></i>
+            </div>
+          </div>
+        </div>
+        <div class="link"></div><div class="link back"></div>
+        <div class="pill"><b>●</b> 1 page · 18 items</div>
+        <div class="win r">
+          <div class="bar"><span class="chip ai">Ai</span><span>Catalog_2026 · Artboard 1</span></div>
+          <div class="board">
+            <span class="artboard-label">01 – Artboard 1</span>
+            <div class="page">
+              <i class="obj o1"></i><i class="obj o2"></i><i class="obj o3"></i><i class="obj o4"></i><i class="obj o5"></i><i class="obj o6"></i>
+            </div>
+          </div>
+        </div>
+        <div id="flyers"></div>
+      </div>
+    </div>
+    <div class="inner slug mono"><span>RelayLink · InDesign 2021+ · Illustrator 2021+</span><span>Sheet 1 of 5</span></div>
+  </section>
+
+  <!-- DEMO VIDEO -->
+  <section class="sheet" id="demo" aria-labelledby="h-demo">
+    <div class="inner video">
+      <div class="video-head">
+        <h2 id="h-demo">See it in 55 seconds</h2>
+        <span class="mono" style="color:var(--muted)">Motion walkthrough with voiceover: the new panel and the new options</span>
+      </div>
+      <video controls playsinline preload="metadata" poster="media/demo-poster.jpg">
+        <source src="media/relaylink-demo.mp4" type="video/mp4">
+      </video>
+    </div>
+    <div class="inner slug mono"><span>1920 × 1080 · 30 fps</span><span>Sheet 2 of 5</span></div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="sheet" id="how" aria-labelledby="h-how">
+    <div class="inner">
+      <span class="eyebrow">How it works</span>
+      <h2 id="h-how" style="margin-top:10px">Two buttons. That's the whole workflow.</h2>
+      <div class="steps">
+        <div class="step">
+          <span class="n">1</span>
+          <h3>Send</h3>
+          <p>In the app where the design lives, choose the whole document or just the selection and press Send. The button takes the colour of where the project is going.</p>
+          <figure><img src="media/id_ready.jpg" width="1600" height="930" alt="InDesign with a sale poster open and the RelayLink panel showing an orange Send to Illustrator button" loading="lazy"></figure>
+        </div>
+        <div class="step">
+          <span class="n">2</span>
+          <h3>Receive</h3>
+          <p>In the other app the package shows up with a green dot. Press Receive to get a new document, or drop it into the one that is open.</p>
+          <figure><img src="media/ai_received.jpg" width="1600" height="930" alt="Illustrator showing the same poster after Receive, with the panel reporting 1 page, 18 items, 9 text and 3 images" loading="lazy"></figure>
+        </div>
+      </div>
+      <p class="note">The transfer goes through a folder (<span class="mono">~/RelayLink-AI-ID</span> by default). Pick another folder in the panel, or open any package with “Open package…”.</p>
+    </div>
+    <div class="inner slug mono"><span>Send → Receive</span><span>Sheet 3 of 5</span></div>
+  </section>
+
+  <!-- WHAT'S NEW -->
+  <section class="sheet" id="new" aria-labelledby="h-new">
+    <div class="inner">
+      <div class="new-head">
+        <span class="eyebrow">What's new</span>
+        <h2 id="h-new">Send exactly what you mean</h2>
+        <p class="lead">Three new options in the Send card, and a panel redesigned so you can tell send from receive at a glance. Try them below.</p>
+      </div>
+
+      <div class="features">
+        <article class="feat">
+          <span class="tag">Page range</span>
+          <h3>Only the pages you need</h3>
+          <p>Type ranges and lists, the way you would in a print dialog. <span class="mono">5-</span> means page 5 to the end. Empty means everything.</p>
+          <div class="demo">
+            <div class="field"><label for="range">Pages</label><input id="range" value="1-3, 5" spellcheck="false" autocomplete="off" aria-describedby="rangeHint"></div>
+            <div class="grid12" id="grid" aria-hidden="true"></div>
+            <div class="hint" id="rangeHint" aria-live="polite"></div>
+          </div>
+        </article>
+
+        <article class="feat">
+          <span class="tag">Pasteboard</span>
+          <h3>Leave the scraps behind</h3>
+          <p>Objects lying around the page stay home. Anything that touches the page, even at the very edge, always goes with it.</p>
+          <div class="demo">
+            <label class="switch"><input type="checkbox" id="pbToggle"> Include pasteboard items</label>
+            <div class="pb" id="pb" aria-hidden="true">
+              <div class="pgx"></div>
+              <i class="s" style="left:37%;top:16%;width:26%;height:12%;background:#2c3f86"></i>
+              <i class="s" style="left:37%;top:33%;width:26%;height:30%;background:linear-gradient(135deg,#e9707f,#f5b25b)"></i>
+              <i class="s keep" style="left:58%;top:68%;width:16%;height:16%;background:#f59100"></i>
+              <i class="s scrap" style="left:5%;top:12%;width:17%;height:20%;background:#7a5ac8"></i>
+              <i class="s scrap" style="left:8%;top:58%;width:12%;height:30%;background:#1f8a68"></i>
+              <i class="s scrap" style="left:76%;top:14%;width:16%;height:24%;background:#d42a63"></i>
+              <i class="s scrap" style="left:80%;top:60%;width:14%;height:12%;background:#4e9ad8"></i>
+            </div>
+            <span class="pb-note" id="pbNote">4 scraps stay in this file · the orange square touches the page, so it goes</span>
+          </div>
+        </article>
+
+        <article class="feat">
+          <span class="tag">Layers</span>
+          <h3>Keep your layers, or merge them</h3>
+          <p>The other app rebuilds the same layers: names, order, visibility and locks. Switch it off to get everything on one layer, stacked the same way.</p>
+          <div class="demo">
+            <label class="switch"><input type="checkbox" id="layToggle" checked> Keep layers</label>
+            <div class="lay">
+              <div><div class="lay-h ai">Illustrator</div>
+                <ol><li><i style="background:#7a5ac8"></i>Notes<small>hidden</small></li><li><i style="background:#4e9ad8"></i>Text</li><li><i style="background:#f59100"></i>Logo<small>locked</small></li><li><i style="background:#1f8a68"></i>Background</li></ol></div>
+              <span class="arrow" aria-hidden="true">→</span>
+              <div><div class="lay-h id">InDesign</div>
+                <ol class="to" id="layTo"><li><i style="background:#7a5ac8"></i><span>Notes</span><small>hidden</small></li><li><i style="background:#4e9ad8"></i>Text</li><li><i style="background:#f59100"></i>Logo<small>locked</small></li><li><i style="background:#1f8a68"></i>Background</li></ol></div>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="fresh">
+        <div>
+          <span class="eyebrow">A fresh panel</span>
+          <h3 style="font-size:1.7rem;margin-top:10px">Send and receive, side by side</h3>
+          <ul>
+            <li><span class="dot" style="background:var(--ai)"></span><span>In InDesign the Send button is orange, because it goes to Illustrator.</span></li>
+            <li><span class="dot" style="background:var(--id)"></span><span>In Illustrator it is pink, because it goes to InDesign.</span></li>
+            <li><span class="dot" style="background:var(--go)"></span><span>The Receive card is green, with a dot that lights up when a package is waiting.</span></li>
+            <li><span class="dot" style="background:var(--muted)"></span><span>It opens on Whole document, all pages, layers kept and no pasteboard items, every time.</span></li>
+          </ul>
+        </div>
+        <div class="panels">
+          <figure><img src="media/panel_id_default.jpg" width="560" height="993" alt="RelayLink panel in InDesign with an orange Send to Illustrator button" loading="lazy"><figcaption>in InDesign</figcaption></figure>
+          <figure><img src="media/panel_ai_default.jpg" width="560" height="993" alt="RelayLink panel in Illustrator with a pink Send to InDesign button" loading="lazy"><figcaption>in Illustrator</figcaption></figure>
+        </div>
+      </div>
+    </div>
+    <div class="inner slug mono"><span>Page range · Pasteboard · Layers</span><span>Sheet 4 of 5</span></div>
+  </section>
+
+  <!-- WHAT TRAVELS -->
+  <section class="sheet" id="travels" aria-labelledby="h-travels">
+    <div class="inner">
+      <span class="eyebrow">What travels</span>
+      <h2 id="h-travels" style="margin-top:10px">Built for real print and brand work</h2>
+      <div class="travels">
+        <dl class="spec">
+          <div><dt>Pages ⇄ artboards</dt><dd>Document size, every page or artboard, different sizes too, bleed.</dd></div>
+          <div><dt>Layers</dt><dd>Name, order, visibility, lock. Illustrator sublayers fold into their parent.</dd></div>
+          <div><dt>Vector shapes</dt><dd>Exact anchor points and handles, compound paths, groups, clipping masks.</dd></div>
+          <div><dt>Colour</dt><dd>RGB, CMYK, spot and gradients, named swatches, transparency, blend modes, overprint.</dd></div>
+          <div><dt>Strokes</dt><dd>Weight, caps, joins and dashes.</dd></div>
+          <div><dt>Type</dt><dd>Font, size, colour, tracking and kerning, leading, alignment, indents, columns, text on a path.</dd></div>
+          <div><dt>Right-to-left</dt><dd>Hebrew and other right-to-left text keeps its direction and paragraph alignment.</dd></div>
+          <div><dt>Images</dt><dd>Linked to the same original file, never embedded or copied. Embedded images are saved once next to the document.</dd></div>
+        </dl>
+        <aside class="stays">
+          <h3>What stays behind</h3>
+          <p>Some things have no counterpart in the other app. RelayLink lists every one of them as a warning after each transfer, so nothing disappears silently.</p>
+          <ul><li>Hyperlinks and interactive objects</li><li>Live effects such as drop shadows</li><li>Brushes and symbols</li><li>Tables and footnotes</li></ul>
+        </aside>
+      </div>
+    </div>
+    <div class="inner slug mono"><span>Measured in points, linked by path</span><span>Sheet 5 of 5</span></div>
+  </section>
+
+  <!-- INSTALL -->
+  <section id="install" aria-labelledby="h-install">
+    <span class="eyebrow">Install</span>
+    <h2 id="h-install" style="margin-top:10px">Ready in a minute</h2>
+    <ol class="install" style="padding:0">
+      <li><h3>Install both panels</h3><p>Open <code>RelayLink-AI-ID_InDesign.zxp</code> and <code>RelayLink-AI-ID_Illustrator.zxp</code> with ZXP Installer.</p></li>
+      <li><h3>Restart the apps</h3><p>Quit and reopen InDesign and Illustrator so they load the panel.</p></li>
+      <li><h3>Open the panel</h3><p>Window ▸ Extensions ▸ <strong>RelayLink AI-ID</strong>, in both apps. Then Send.</p></li>
+    </ol>
+    <div class="reqs"><span>InDesign 2021 or later</span><span>Illustrator 2021 or later</span></div>
+  </section>
+
+  <footer>
+    <span>RelayLink · Id ⇄ Ai</span>
+    <a href="https://www.instagram.com/bigmisha/" target="_blank" rel="noopener">Built by bigmisha</a>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  // ---------- hero: flying copies of the source page's objects
+  var stage = document.querySelector('.stage'), src = document.getElementById('srcPage'), dst = document.querySelector('.win.r .page'), host = document.getElementById('flyers');
+  function buildFlyers() {
+    host.innerHTML = '';
+    var sb = stage.getBoundingClientRect(), so = src.querySelectorAll('.obj'), dobj = dst.querySelectorAll('.obj');
+    for (var i = 0; i < so.length; i++) {
+      var a = so[i].getBoundingClientRect(), b = dobj[i].getBoundingClientRect(), cs = getComputedStyle(so[i]);
+      var f = document.createElement('i');
+      f.className = 'flyer';
+      f.style.cssText = 'left:' + (a.left - sb.left) + 'px;top:' + (a.top - sb.top) + 'px;width:' + a.width + 'px;height:' + a.height + 'px;background:' + cs.background +
+        ';border-radius:' + cs.borderRadius + ';--dx:' + (b.left - a.left) + 'px;--dy:' + (b.top - a.top) + 'px;animation-delay:' + (i * 0.12) + 's';
+      host.appendChild(f);
+    }
+  }
+  buildFlyers();
+  var rt; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(buildFlyers, 150); });
+
+  // ---------- page range demo (same rules as the panel)
+  var COUNT = 12, grid = document.getElementById('grid'), input = document.getElementById('range'), hint = document.getElementById('rangeHint'), cells = [];
+  for (var n = 1; n <= COUNT; n++) { var c = document.createElement('div'); c.className = 'pg'; c.dataset.n = n; grid.appendChild(c); cells.push(c); }
+  function parseRange(text, count) {
+    var s = String(text || '').replace(/[–—]/g, '-').trim();
+    if (!s || /^all$/i.test(s)) return { pages: null };
+    var seen = {}, out = [], parts = s.split(/[,;\s]+/), i, m, a, b, k;
+    for (i = 0; i < parts.length; i++) {
+      if (!parts[i]) continue;
+      m = /^(\d+)(?:-(\d*))?$/.exec(parts[i]);
+      if (!m) return { error: '"' + parts[i] + '" is not a page number or range' };
+      a = parseInt(m[1], 10); b = m[2] === undefined ? a : (m[2] === '' ? count : parseInt(m[2], 10));
+      if (a > b) { k = a; a = b; b = k; }
+      if (a < 1) return { error: 'Pages start at 1' };
+      if (b > count) return { error: 'Page ' + b + ' does not exist (' + count + ' in document)' };
+      for (k = a; k <= b; k++) if (!seen[k]) { seen[k] = true; out.push(k - 1); }
+    }
+    return out.length ? { pages: out } : { pages: null };
+  }
+  function renderRange() {
+    var r = parseRange(input.value, COUNT), on = {};
+    if (r.pages) r.pages.forEach(function (p) { on[p] = true; });
+    cells.forEach(function (c, i) { c.classList.toggle('on', !r.error && (!r.pages || !!on[i])); });
+    input.classList.toggle('bad', !!r.error); hint.classList.toggle('bad', !!r.error);
+    hint.textContent = r.error ? r.error : r.pages ? r.pages.length + ' of ' + COUNT + ' pages will be sent' : 'All ' + COUNT + ' pages will be sent';
+  }
+  input.addEventListener('input', renderRange); renderRange();
+
+  // ---------- pasteboard demo
+  var pb = document.getElementById('pb'), pbT = document.getElementById('pbToggle'), pbNote = document.getElementById('pbNote');
+  pbT.addEventListener('change', function () {
+    pb.classList.toggle('with', pbT.checked);
+    pbNote.textContent = pbT.checked ? 'Everything on the pasteboard goes too' : '4 scraps stay in this file · the orange square touches the page, so it goes';
+  });
+
+  // ---------- layers demo
+  var layT = document.getElementById('layToggle'), to = document.getElementById('layTo'), first = to.querySelector('li span'), firstTag = to.querySelector('li small');
+  layT.addEventListener('change', function () {
+    to.classList.toggle('merged', !layT.checked);
+    first.textContent = layT.checked ? 'Notes' : 'Layer 1';
+    firstTag.hidden = !layT.checked;
+  });
+})();
+</script>
+
+</body>
+</html>
